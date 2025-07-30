@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:todo_demo/provider_notifier.dart';
 
-import 'model/task_details_screen.dart';
+import 'task_details_screen.dart';
 import 'model/task_model.dart';
 
 class TaskListScreen extends ConsumerWidget {

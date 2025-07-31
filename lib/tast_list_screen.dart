@@ -1,146 +1,95 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:todo_demo/provider_notifier.dart';
+import 'package:todo_demo/task_details_screen.dart';
 
-import 'task_details_screen.dart';
+import 'add_task_screen.dart';
 import 'model/task_model.dart';
 
 class TaskListScreen extends ConsumerWidget {
+  const TaskListScreen({super.key});
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final taskList = ref.watch(taskListProvider);
-    final taskListNotifier = ref.read(taskListProvider.notifier);
-    final boolComplete = ref.read(taskListProvider.notifier);
+
+
+    final tasks = ref.watch(taskListProvider);
+    final completedCount = tasks.where((t) => t.isCompleted).length;
 
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.blue,
-        title: const Text(
-          'Task List',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        title: Text('$completedCount of ${tasks.length} completed'),
       ),
       body: ListView.builder(
-        itemCount: taskList.length, // Example item count
-        itemBuilder: (context, index) {
-          var data = taskList[index];
-          print(data.priority);
-          return Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Slidable(
-              startActionPane: ActionPane(
-                motion: const ScrollMotion(),
-                children: [
-                  SlidableAction(
-                    onPressed: (context) {
-                      // Delete action logic
-                      taskListNotifier.state = [
-                        for (int i = 0; i < taskList.length; i++)
-                          if (i != index) taskList[i],
-                      ];
-                    },
-                    backgroundColor: Colors.red,
-                    foregroundColor: Colors.white,
-                    icon: Icons.delete,
-                    label: 'Delete',
-                  ),
-                ],
-              ),
-              child: InkWell(
+        itemCount: tasks.length,
+        itemBuilder: (_, index) {
+          final task = tasks[index];
+          final isOverdue = task.dueDate.isBefore(DateTime.now());
+
+          return Dismissible(
+            key: Key(task.id),
+            onDismissed: (_) => ref.read(taskListProvider.notifier).deleteTask(task.id),
+            child: Card(
+              color: isOverdue ? Colors.red.shade50 : null,
+              child: ListTile(
                 onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => TaskDetailsScreen(task: data),
-                    ),
-                  );
+                  Navigator.push(context, MaterialPageRoute(
+                    builder: (_) => TaskDetailScreen(taskId: task.id),
+                  ));
                 },
-                onLongPress: () {
-                  taskListNotifier.state = [
-                    for (int i = 0; i < taskList.length; i++)
-                      if (i != index) taskList[i],
-                  ];
-                },
-                child: Card(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                        color: data.priority == Priority.high
-                            ? Colors.red
-                            : data.priority == Priority.medium
-                            ? Colors.orange
-                            : Colors.green,
-                        width: 2,
-                      ),
-                      borderRadius: BorderRadius.circular(8),
+                title: Text(
+                  task.title,
+                  style: task.isCompleted
+                      ? TextStyle(decoration: TextDecoration.lineThrough)
+                      : null,
+                ),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(task.description.length > 50
+                        ? task.description.substring(0, 50) + '...'
+                        : task.description),
+                    Wrap(
+                      spacing: 4,
+                      children: [
+                        Chip(label: Text(task.category)),
+                        Chip(
+                          label: Text(task.priority.name.toUpperCase()),
+                          backgroundColor: _priorityColor(task.priority),
+                        ),
+                      ],
                     ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Text(
-                                "Completed: ",
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.black,
-                                ),
-                              ),
-                              Checkbox(
-                                value: data.isCompleted ?? false,
-                                onChanged: (value) {
-                                  boolComplete.state = [
-                                    for (final t in taskList)
-                                      if (t == data)
-                                        t.copyWith(isCompleted: value)
-                                      else
-                                        t,
-                                  ];
-                                },
-                              ),
-                            ],
-                          ),
-                          commonWidget("Task: ", data.title ?? 'No Title'),
-                          commonWidget(
-                            "Description: ",
-                            data.description ?? 'No Description',
-                          ),
-                          commonWidget("Create Date: ", '${data.createdAt}'),
-                        ],
-                      ),
-                    ),
-                  ),
+                    Text('Created: ${task.createdAt.toLocal()}'),
+                  ],
+                ),
+                trailing: Checkbox(
+                  value: task.isCompleted,
+                  onChanged: (_) =>
+                      ref.read(taskListProvider.notifier).toggleComplete(task.id),
                 ),
               ),
             ),
           );
         },
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const AddTaskScreen()),
+        ),
+        child: const Icon(Icons.add),
+      ),
     );
   }
 
-  commonWidget(String title, String text) {
-    return RichText(
-      text: TextSpan(
-        text: title,
-        style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black),
-        children: [
-          TextSpan(
-            text: text,
-            style: TextStyle(
-              fontWeight: FontWeight.normal,
-              color: Colors.grey[700],
-            ),
-          ),
-        ],
-      ),
-    );
+  Color _priorityColor(Priority p) {
+    switch (p) {
+      case Priority.high:
+        return Colors.red;
+      case Priority.medium:
+        return Colors.orange;
+      case Priority.low:
+        return Colors.green;
+    }
   }
 }

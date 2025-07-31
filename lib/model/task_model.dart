@@ -1,15 +1,25 @@
-class Task {
-  String? id;
-  String? title;
-  String? description;
-  bool? isCompleted;
-  Priority? priority; // enum: High, Medium, Low
-  String? category;
-  DateTime? createdAt;
-  DateTime? dueDate;
+enum Priority { high, medium, low }
 
-  Task({this.id, this.title, this.description, this.isCompleted, this.priority,
-      this.category, this.createdAt, this.dueDate});
+class Task {
+  String id;
+  String title;
+  String description;
+  bool isCompleted;
+  Priority priority;
+  String category;
+  DateTime createdAt;
+  DateTime dueDate;
+
+  Task({
+    required this.id,
+    required this.title,
+    required this.description,
+    required this.isCompleted,
+    required this.priority,
+    required this.category,
+    required this.createdAt,
+    required this.dueDate,
+  });
 
   Task copyWith({
     String? id,
@@ -33,6 +43,3 @@ class Task {
     );
   }
 }
-
-enum Priority { high, medium, low }
-

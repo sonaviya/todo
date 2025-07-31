@@ -1,34 +1,36 @@
 import 'package:flutter/material.dart';
-import 'package:todo_demo/model/task_model.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:todo_demo/provider_notifier.dart';
 
-class TaskDetailsScreen extends StatefulWidget {
-  Task? task;
-
-  TaskDetailsScreen({this.task});
+class TaskDetailScreen extends ConsumerWidget {
+  final String taskId;
+  const TaskDetailScreen({required this.taskId, super.key});
 
   @override
-  State<TaskDetailsScreen> createState() => _TaskDetailsScreenState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final task = ref.watch(taskListProvider).firstWhere((t) => t.id == taskId);
+    final notifier = ref.read(taskListProvider.notifier);
+    final titleController = TextEditingController(text: task.title);
+    final descController = TextEditingController(text: task.description);
 
-class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
-  @override
-  Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Task Details')),
+      appBar: AppBar(title: const Text('Task Detail')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(widget.task?.title ?? ""),
-            const SizedBox(height: 8.0),
-            Text(widget.task?.description ?? ""),
-            const SizedBox(height: 16.0),
+            TextField(controller: titleController),
+            TextField(controller: descController, maxLines: 3),
+            const SizedBox(height: 16),
             ElevatedButton(
               onPressed: () {
-                // Handle button press
+                notifier.updateTask(task.copyWith(
+                  title: titleController.text,
+                  description: descController.text,
+                ));
+                Navigator.pop(context);
               },
-              child: const Text('save'),
+              child: const Text('Save'),
             ),
           ],
         ),
